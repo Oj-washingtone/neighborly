@@ -8,18 +8,13 @@ import {
   TextInput,
 } from "react-native";
 
-import * as NavigationBar from "expo-navigation-bar";
-
-// screens
-import AppNavigator from "./navigation/index";
-
-export default function App() {
-  // change android navigation color
-  NavigationBar.setBackgroundColorAsync("#fff");
-  // change android navigation buttons color
-  NavigationBar.setButtonStyleAsync("dark");
-
-  return <AppNavigator />;
+export default function Profile() {
+  return (
+    <View style={styles.container}>
+      <StatusBar style="auto" />
+      <Text>Profile</Text>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
