@@ -8,18 +8,11 @@ import {
   TextInput,
 } from "react-native";
 
-import * as NavigationBar from "expo-navigation-bar";
-
-export default function App() {
-  // change android navigation color
-  NavigationBar.setBackgroundColorAsync("#fff");
-  // change android navigation buttons color
-  NavigationBar.setButtonStyleAsync("dark");
-
+export default function JobCall() {
   return (
     <View style={styles.container}>
       <StatusBar style="auto" />
-      <Text>Job Screen testing</Text>
+      <Text>Job Call</Text>
     </View>
   );
 }
