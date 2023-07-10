@@ -7,12 +7,26 @@ import {
   TouchableOpacity,
   TextInput,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 
 export default function Profile() {
+  const navigation = useNavigation();
+
+  const handleProfilePictureUpdate = () => {
+    navigation.navigate("Profile Picture Update");
+  };
+  // navigate t
   return (
     <View style={styles.container}>
       <StatusBar style="auto" />
       <Text>Profile</Text>
+      {/* Buton to update profile picture */}
+      <TouchableOpacity
+        style={styles.button}
+        onPress={handleProfilePictureUpdate}
+      >
+        <Text>Update Profile Picture</Text>
+      </TouchableOpacity>
     </View>
   );
 }

@@ -7,8 +7,9 @@ import {
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
+  Image,
 } from "react-native";
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { FirebaseRecaptchaVerifierModal } from "expo-firebase-recaptcha";
 import { firebaseConfig, app } from "../config/firebase";
 import {
@@ -16,6 +17,9 @@ import {
   getAuth,
   signInWithCredential,
 } from "firebase/auth";
+import { db } from "../config/firebase";
+import { doc, setDoc } from "firebase/firestore";
+import { MaterialCommunityIcons } from "react-native-vector-icons";
 
 export default function SignIn() {
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -40,7 +44,7 @@ export default function SignIn() {
     setPhoneNumber("");
   };
 
-  const confirmCode = () => {
+  const confirmCode = async () => {
     const credential = PhoneAuthProvider.credential(verificationId, code);
 
     signInWithCredential(getAuth(app), credential)
@@ -48,6 +52,33 @@ export default function SignIn() {
         // Handle successful sign-in
         console.log(result);
         setCode("");
+
+        // Store the user token in AsyncStorage
+        const userToken = result.user.uid;
+        AsyncStorage.setItem("userToken", userToken);
+
+        try {
+          // create user in firestore
+          const userRef = doc(db, "users", userToken);
+          setDoc(userRef, {
+            phoneNumber: result.user.phoneNumber,
+            userName: "",
+            userPhoto: "",
+            userBio: "",
+            userLocation: "",
+            userSkills: [],
+            userJobs: [],
+            userRating: 0,
+            userReviews: [],
+            userNotifications: [],
+            messages: [],
+            currentWorkingJob: "",
+            availableForWork: false,
+            currentlyWorking: false,
+          });
+        } catch (error) {
+          console.log("Error creating user: ", error);
+        }
       })
       .catch((error) => {
         // Handle sign-in error
@@ -55,10 +86,50 @@ export default function SignIn() {
       });
   };
 
+  const handleNewNumber = () => {
+    setShowCodeInput(false);
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar style="auto" />
-      <Text>Sign In</Text>
+      <View style={styles.logoWrapper}>
+        <View style={styles.logo}>
+          <MaterialCommunityIcons name="alpha-w" size={60} color="#000" />
+          <Text style={styles.logoText}>workit</Text>
+        </View>
+      </View>
+      {!showCodeInput && ( // Render the code input if showCodeInput is true}
+        <View style={styles.onboarding}>
+          <Image
+            source={require("../assets/images/onboarding.png")}
+            style={styles.onboardingImage}
+          />
+          <Text style={[styles.onboardingText, { marginTop: 20 }]}>
+            {" "}
+            Find work opportunities
+          </Text>
+          <Text style={[styles.onboardingText, styles.onboardingText2]}>
+            {" "}
+            and hire talented individuals
+          </Text>
+          <Text style={styles.onboardingText}>near you </Text>
+        </View>
+      )}
+
+      {showCodeInput && (
+        <View style={styles.onboarding}>
+          <Text style={[styles.onboardingText, { marginTop: 20 }]}>
+            {" "}
+            Enter verification code
+          </Text>
+          <Text style={[styles.onboardingText, styles.onboardingText2]}>
+            {" "}
+            to verify
+          </Text>
+          <Text style={styles.onboardingText}>{phoneNumber}</Text>
+        </View>
+      )}
 
       {showCodeInput ? ( // Render the code input if showCodeInput is true
         <View style={styles.inputView}>
@@ -68,8 +139,16 @@ export default function SignIn() {
             keyboardType="number-pad"
             style={styles.input}
           />
+          <TouchableOpacity style={styles.button2} onPress={handleNewNumber}>
+            <Text style={styles.buttonText2}>Use different number</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity style={styles.button} onPress={confirmCode}>
-            <Text>Verify phone number</Text>
+            {showCodeInput ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>Verify phone number</Text>
+            )}
           </TouchableOpacity>
         </View>
       ) : (
@@ -84,10 +163,14 @@ export default function SignIn() {
             style={styles.input}
           />
           <TouchableOpacity style={styles.button} onPress={sendVerification}>
-            <Text>Send Verification</Text>
+            <Text style={styles.buttonText}>Next</Text>
           </TouchableOpacity>
         </View>
       )}
+
+      <Text style={styles.tagline}>
+        Creating oppotunities, empowering people
+      </Text>
 
       <FirebaseRecaptchaVerifierModal
         ref={recaptchaVerifier}
@@ -107,7 +190,7 @@ const styles = StyleSheet.create({
   },
   inputView: {
     width: "100%",
-    height: "100%",
+    // height: "100%",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -123,16 +206,74 @@ const styles = StyleSheet.create({
 
   button: {
     width: "80%",
-    height: 40,
+    padding: 7,
     margin: 12,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#ccc",
-    borderRadius: 5,
+    backgroundColor: "#02d5c9",
+    borderRadius: 10,
   },
 
   recaptcha: {
     alignSelf: "center", // Center the reCAPTCHA container horizontally
     marginTop: 20,
+  },
+
+  buttonText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
+
+  onboardingText: {
+    fontSize: 20,
+    textAlign: "center",
+    fontWeight: "bold",
+  },
+  onboardingText2: {
+    color: "#02d5c9",
+  },
+
+  onboardingImage: {
+    width: 200,
+    height: 200,
+    resizeMode: "contain",
+    marginBottom: 20,
+  },
+  onboarding: {
+    alignItems: "center",
+    justifyContent: "center",
+    margin: 20,
+    marginTop: 30,
+  },
+
+  logoWrapper: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  logo: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  logoText: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#02d5c9",
+  },
+
+  tagline: {
+    fontSize: 9,
+    color: "#000",
+    textAlign: "center",
+    fontStyle: "italic",
+  },
+  buttonText2: {
+    color: "#02d5c9",
+    fontWeight: "bold",
+  },
+  button2: {
+    maeginVertical: 20,
   },
 });
