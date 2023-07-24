@@ -12,6 +12,7 @@ import UsernameForm from "../screens/usernameForm";
 import LocationAccess from "../screens/locationAccess";
 import ProfilePictureUpdate from "../screens/profilePictureUpdate";
 import Preferences from "../screens/preferences";
+import SelectTasker from "../screens/selectTasker";
 
 const Stack = createNativeStackNavigator();
 
@@ -63,6 +64,8 @@ export default function UserStack() {
           component={Preferences}
           options={{ headerShown: false }}
         />
+
+        <Stack.Screen name="Select Tasker" component={SelectTasker} />
       </Stack.Navigator>
     </NavigationContainer>
   );

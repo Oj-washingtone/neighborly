@@ -1,4 +1,4 @@
-import React, { useState, useRef, useContext } from "react";
+import React, { useState, useRef, useContext, useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
 import {
   StyleSheet,
@@ -22,6 +22,7 @@ import {
 } from "firebase/firestore";
 import { useAuthentication } from "../utils/hooks/useAuthentication";
 import { UserContext } from "../navigation/index";
+import * as Location from "expo-location";
 
 export default function UsernameForm() {
   const user = useAuthentication();
@@ -29,9 +30,49 @@ export default function UsernameForm() {
   const navigation = useNavigation();
 
   const [waiting, setWaiting] = useState(false);
+  const [userLocation, setUserLocation] = useState(null);
 
   const [username, setUsername] = useState("");
   const { userDetails, setUserDetails } = useContext(UserContext);
+  const handleAllowLocation = async () => {
+    try {
+      setWaiting(true);
+      const { status } = await Location.requestForegroundPermissionsAsync();
+
+      if (status === "granted") {
+        const location = await Location.getCurrentPositionAsync();
+        setUserLocation(location);
+
+        try {
+          const docRef = doc(db, "users", userId);
+          await setDoc(
+            docRef,
+            {
+              userLocation: location,
+            },
+            { merge: true }
+          );
+
+          setWaiting(false);
+        } catch (error) {
+          console.log(error);
+        }
+      } else {
+        alert("Permission Denied", "Location access was not granted.");
+        setWaiting(false);
+      }
+    } catch (error) {
+      console.error("Error requesting location access:", error);
+      setWaiting(false);
+    } finally {
+      setWaiting(false);
+    }
+  };
+
+  // call for location
+  useEffect(() => {
+    handleAllowLocation();
+  }, []);
 
   const handleSaveUsername = async () => {
     try {

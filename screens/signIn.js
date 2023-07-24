@@ -28,6 +28,7 @@ export default function SignIn() {
   const recaptchaVerifier = useRef(null);
 
   const [showCodeInput, setShowCodeInput] = useState(false); // Track whether to show code input or not
+  const [verifying, setVerifying] = useState(false);
 
   const sendVerification = () => {
     const phoneProvider = new PhoneAuthProvider(getAuth(app));
@@ -41,10 +42,11 @@ export default function SignIn() {
         alert("Failed to send verification code. Please try again.");
       });
 
-    setPhoneNumber("");
+    // setPhoneNumber("");
   };
 
   const confirmCode = async () => {
+    setVerifying(true);
     const credential = PhoneAuthProvider.credential(verificationId, code);
 
     signInWithCredential(getAuth(app), credential)
@@ -75,6 +77,8 @@ export default function SignIn() {
             currentWorkingJob: "",
             availableForWork: false,
             currentlyWorking: false,
+            paymentRate: "",
+            hasJobRequest: false,
           });
         } catch (error) {
           console.log("Error creating user: ", error);
@@ -144,7 +148,7 @@ export default function SignIn() {
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.button} onPress={confirmCode}>
-            {showCodeInput ? (
+            {verifying ? (
               <ActivityIndicator color="#fff" />
             ) : (
               <Text style={styles.buttonText}>Verify phone number</Text>

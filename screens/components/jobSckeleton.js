@@ -11,54 +11,11 @@ import {
 } from "firebase/firestore";
 import { useAuthentication } from "../../utils/hooks/useAuthentication";
 
-const JobItemSkeleton = () => {
+export default function JobItemSkeleton() {
   const user = useAuthentication();
   const userId = user?.uid;
   const [waiting, setWaiting] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
-
-  const handleAllowLocation = async () => {
-    try {
-      setWaiting(true);
-      const { status } = await Location.requestForegroundPermissionsAsync();
-
-      if (status === "granted") {
-        const location = await Location.getCurrentPositionAsync();
-        setUserLocation(location);
-
-        try {
-          const docRef = doc(db, "users", userId);
-          await setDoc(
-            docRef,
-            {
-              location: userLocation,
-            },
-            { merge: true }
-          );
-
-          alert("Location updated successfully");
-          setWaiting(false);
-        } catch (error) {
-          console.log(error);
-        }
-      } else {
-        alert("Permission Denied", "Location access was not granted.");
-        setWaiting(false);
-      }
-    } catch (error) {
-      console.error("Error requesting location access:", error);
-      setWaiting(false);
-    } finally {
-      setWaiting(false);
-    }
-  };
-
-  //call the function
-
-  //   set timeout of 20 seconds before calling the function
-  setTimeout(() => {
-    handleAllowLocation();
-  }, 30000);
 
   return (
     <View style={styles.skeleton}>
@@ -179,7 +136,7 @@ const JobItemSkeleton = () => {
       </View>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   jobItemWrapper: {
@@ -257,5 +214,3 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
 });
-
-export default JobItemSkeleton;

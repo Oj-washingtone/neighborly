@@ -75,8 +75,7 @@ const styles = StyleSheet.create({
   },
 
   noJobListingInfo: {
-    fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: "500",
     textAlign: "center",
   },
 

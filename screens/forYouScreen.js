@@ -60,6 +60,8 @@ export default function ForYouScreen() {
     getUserDetails();
   }, [userId]);
 
+  // console.log(userDetails.userLocation);
+
   const toggleSwitch = () => {
     setAvailableForWork((previousState) => !previousState);
   };
@@ -105,7 +107,7 @@ export default function ForYouScreen() {
       </View>
       {availableForWork ? (
         <View style={styles.jobList}>
-          <Text style={styles.title}>Available Job</Text>
+          <Text style={styles.title}>Available in your Area</Text>
           {isLoadingJob ? (
             <JobItemSkeleton />
           ) : (
