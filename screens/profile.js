@@ -13,7 +13,7 @@ export default function Profile() {
   const navigation = useNavigation();
 
   const handleProfilePictureUpdate = () => {
-    navigation.navigate("Profile Picture Update");
+    navigation.navigate("Username form");
   };
   // navigate t
   return (

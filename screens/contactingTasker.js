@@ -19,13 +19,12 @@ import {
   setDoc,
   onSnapshot,
 } from "firebase/firestore";
-
 import { Audio } from "expo-av";
 import { MaterialCommunityIcons } from "react-native-vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useAuthentication } from "../utils/hooks/useAuthentication";
 
-export default function JobCall({ route }) {
+export default function ContactTasker({ route }) {
   const user = useAuthentication();
   const userId = user?.uid;
 
@@ -36,22 +35,7 @@ export default function JobCall({ route }) {
   const [ringtoneSound, setRingtoneSound] = useState(null);
   const [rippleAnimation] = useState(new Animated.Value(0));
   let vibrationTimeout;
-
-  useEffect(() => {
-    const startVibration = () => {
-      Vibration.vibrate([500, 500, 500], { interval: 1000, repeat: true });
-      vibrationTimeout = setTimeout(() => {
-        Vibration.cancel();
-      }, 30000); // Stop vibration after 30 seconds
-    };
-
-    startVibration();
-
-    return () => {
-      Vibration.cancel();
-      clearTimeout(vibrationTimeout);
-    };
-  }, []);
+  const [noResponse, setNoResponse] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -113,19 +97,18 @@ export default function JobCall({ route }) {
 
   // reject job
   const rejectJob = async () => {
-    // stop vibration
-    Vibration.cancel();
+    // navigate backwards
+    navigation.goBack();
   };
 
   // play ringtone
-  // const playRingtone = async () => {
-  //   const { sound } = await Audio.Sound.createAsync(
-
-  //     require("../assets/ringtone.mp3")
-  //   );
-  //   setRingtoneSound(sound);
-  //   await sound.playAsync();
-  // };
+  const playRingtone = async () => {
+    const { sound } = await Audio.Sound.createAsync(
+      require("../assets/tones/ringtone.mp3"),
+      { shouldPlay: true, isLooping: true }
+    );
+    setRingtoneSound(sound);
+  };
 
   // get the details of the tasker from firestore
 
@@ -145,9 +128,38 @@ export default function JobCall({ route }) {
     getTaskerDetails();
   }, [taskerId]);
 
+  // listen for tasker response (check if has job request has turned to false )
+  useEffect(() => {
+    const unsubscribe = onSnapshot(
+      doc(db, "users", userId),
+      (doc) => {
+        const data = doc.data();
+        if (data?.hasJobRequest === false) {
+          // navigate to job details screen and remove this screen from stack
+          // navigation.replace("Job Details");
+          alert("Tasker has rejected your request");
+        }
+      },
+      (error) => {
+        console.log(error);
+      }
+    );
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
   return (
     <View style={styles.container}>
       <StatusBar style="auto" />
+      <View style={styles.logo}>
+        {/* <Image
+          source={require("../assets/platform/logo.png")}
+          style={styles.logoImage}
+          // cover
+        /> */}
+      </View>
       <View style={styles.dpContainer}>
         <View style={styles.dp}>
           <Image
@@ -157,55 +169,26 @@ export default function JobCall({ route }) {
         </View>
         <Animated.View style={getRippleStyle()} />
       </View>
-      <Text style={styles.name}>{taskerDetails.userName}</Text>
+
+      <Text style={styles.name}>{taskerDetails?.userName}</Text>
       <Text
         style={{
           fontSize: 16,
           color: "#000",
-          marginBottom: 20,
+          //   marginTop: 20,
         }}
       >
-        Incoming job offer
-      </Text>
-
-      <Text>
-        <Text style={{ fontWeight: "bold" }}>Job type: </Text>
-        <Text>Washing</Text>
-      </Text>
-
-      <Text
-        style={{
-          fontSize: 16,
-          color: "#000",
-          marginTop: 20,
-          marginBottom: 10,
-        }}
-      >
-        <Text style={{ fontWeight: "bold" }}>Location: </Text>
-        <Text>Westlands</Text>
+        Waiting for response...
       </Text>
 
       <View style={styles.buttonContainer}>
-        <View>
-          <TouchableOpacity
-            style={[styles.button, styles.rejectButton]}
-            onPress={rejectJob}
-            activeOpacity={0.5}
-          >
-            <MaterialCommunityIcons name="close" size={30} color="#fff" />
-          </TouchableOpacity>
-          <Text style={styles.buttonText}>Decline</Text>
-        </View>
-        <View>
-          <TouchableOpacity
-            style={[styles.button, styles.acceptButton]}
-            onPress={acceptJob}
-            activeOpacity={0.5}
-          >
-            <MaterialCommunityIcons name="check" size={30} color="#fff" />
-          </TouchableOpacity>
-          <Text style={styles.buttonText}>Accept</Text>
-        </View>
+        <TouchableOpacity
+          style={[styles.button, styles.rejectButton]}
+          onPress={rejectJob}
+          activeOpacity={0.5}
+        >
+          <Text style={styles.buttonText}>Cancel</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -238,15 +221,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     marginBottom: 20,
   },
-  button: {
-    width: 60,
-    height: 60,
-    borderRadius: 60 / 2,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+
   buttonText: {
-    color: "#000",
+    color: "#fff",
     fontSize: 16,
     // fontWeight: "bold",
     textAlign: "center",
@@ -254,7 +231,14 @@ const styles = StyleSheet.create({
   },
   rejectButton: {
     backgroundColor: "#ed4746",
+    width: "90%",
+    borderRadius: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 5,
   },
+
   acceptButton: {
     backgroundColor: "#18f58a",
   },
@@ -263,12 +247,27 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     marginTop: 20,
-    marginBottom: 40,
+    marginBottom: 20,
   },
 
   dpImage: {
     width: "100%",
     height: "100%",
     borderRadius: 150 / 2,
+  },
+
+  logo: {
+    // flex: 0.5,
+    // width: 150,
+    // height: 150,
+    // marginBottom: 40,
+    // cover
+  },
+
+  logoImage: {
+    width: 100,
+    aspectRatio: 1,
+    height: "auto",
+    resizeMode: "contain",
   },
 });

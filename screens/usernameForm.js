@@ -42,21 +42,6 @@ export default function UsernameForm() {
       if (status === "granted") {
         const location = await Location.getCurrentPositionAsync();
         setUserLocation(location);
-
-        try {
-          const docRef = doc(db, "users", userId);
-          await setDoc(
-            docRef,
-            {
-              userLocation: location,
-            },
-            { merge: true }
-          );
-
-          setWaiting(false);
-        } catch (error) {
-          console.log(error);
-        }
       } else {
         alert("Permission Denied", "Location access was not granted.");
         setWaiting(false);
@@ -73,6 +58,25 @@ export default function UsernameForm() {
   useEffect(() => {
     handleAllowLocation();
   }, []);
+
+  useEffect(() => {
+    // This useEffect will run whenever userLocation changes
+    if (userLocation) {
+      try {
+        const docRef = doc(db, "users", userId);
+        setDoc(
+          docRef,
+          {
+            userLocation: userLocation,
+          },
+          { merge: true }
+        );
+        setWaiting(false);
+      } catch (error) {
+        console.log(error);
+      }
+    }
+  }, [userLocation]);
 
   const handleSaveUsername = async () => {
     try {

@@ -79,6 +79,7 @@ export default function SignIn() {
             currentlyWorking: false,
             paymentRate: "",
             hasJobRequest: false,
+            userId: userToken,
           });
         } catch (error) {
           console.log("Error creating user: ", error);

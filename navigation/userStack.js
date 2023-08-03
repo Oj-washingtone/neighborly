@@ -13,6 +13,8 @@ import LocationAccess from "../screens/locationAccess";
 import ProfilePictureUpdate from "../screens/profilePictureUpdate";
 import Preferences from "../screens/preferences";
 import SelectTasker from "../screens/selectTasker";
+import ContactTasker from "../screens/contactingTasker";
+import TaskerDetails from "../screens/taskerDetails";
 
 const Stack = createNativeStackNavigator();
 
@@ -37,6 +39,13 @@ export default function UserStack() {
           component={JobCall}
           options={{ headerShown: false }}
         />
+
+        <Stack.Screen
+          name="ContactTasker"
+          component={ContactTasker}
+          options={{ headerShown: false }}
+        />
+
         <Stack.Screen
           name="Job Details"
           component={JobDetails}
@@ -63,6 +72,12 @@ export default function UserStack() {
           name="User Prerefrences"
           component={Preferences}
           options={{ headerShown: false }}
+        />
+
+        <Stack.Screen
+          name="Tasker Details"
+          component={TaskerDetails}
+          // options={{ headerShown: false }}
         />
 
         <Stack.Screen name="Select Tasker" component={SelectTasker} />

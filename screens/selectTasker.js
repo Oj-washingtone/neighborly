@@ -12,6 +12,7 @@ import {
   PanResponder,
   Animated,
   FlatList,
+  Alert,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -36,6 +37,9 @@ import MapView, { Marker } from "react-native-maps";
 import TakerSkeletonLoader from "./components/taskersSkeletonLoader";
 
 export default function SelectTasker() {
+  const user = useAuthentication();
+  const userId = user?.uid;
+
   const navigation = useNavigation();
   const route = useRoute();
   const { jobDetails } = route.params;
@@ -56,108 +60,6 @@ export default function SelectTasker() {
     }
   }, [jobDetails.location]);
 
-  const [taskers, setTaskers] = useState([
-    {
-      id: 1,
-      name: "John Doe",
-      rating: 4.5,
-      price: 20,
-      location: {
-        latitude: 1.3521,
-        longitude: 103.8198,
-      },
-    },
-    {
-      id: 5,
-      name: "John Doe",
-      rating: 4.5,
-      price: 20,
-      location: {
-        latitude: 1.3521,
-        longitude: 103.8198,
-      },
-    },
-    {
-      id: 2,
-      name: "John Doe",
-      rating: 4.5,
-      price: 20,
-      location: {
-        latitude: 1.3521,
-        longitude: 103.8198,
-      },
-    },
-    {
-      id: 3,
-      name: "John Doe",
-      rating: 4.5,
-      price: 20,
-      location: {
-        latitude: 1.3521,
-        longitude: 103.8198,
-      },
-    },
-    {
-      id: 4,
-      name: "John Doe",
-      rating: 4.5,
-      price: 20,
-      location: {
-        latitude: 1.3521,
-        longitude: 103.8198,
-      },
-    },
-    {
-      id: 6,
-      name: "John Doe",
-      rating: 4.5,
-      price: 20,
-      location: {
-        latitude: 1.3521,
-        longitude: 103.8198,
-      },
-    },
-    {
-      id: 7,
-      name: "John Doe",
-      rating: 4.5,
-      price: 20,
-      location: {
-        latitude: 1.3521,
-        longitude: 103.8198,
-      },
-    },
-    {
-      id: 8,
-      name: "John Doe",
-      rating: 4.5,
-      price: 20,
-      location: {
-        latitude: 1.3521,
-        longitude: 103.8198,
-      },
-    },
-    {
-      id: 9,
-      name: "John Doe",
-      rating: 4.5,
-      price: 20,
-      location: {
-        latitude: 1.3521,
-        longitude: 103.8198,
-      },
-    },
-    {
-      id: 10,
-      name: "John Doe",
-      rating: 4.5,
-      price: 20,
-      location: {
-        latitude: 1.3521,
-        longitude: 103.8198,
-      },
-    },
-  ]);
   const [users, setUsers] = useState([]);
   useEffect(() => {
     const jobTitle = jobDetails.jobTitle;
@@ -166,6 +68,7 @@ export default function SelectTasker() {
     const queryRef = query(
       usersCollectionRef,
       where("userSkills", "array-contains", jobTitle)
+      // where("userId", "!=", userId.toString())
     );
 
     const unsubscribe = onSnapshot(queryRef, (snapshot) => {
@@ -174,18 +77,105 @@ export default function SelectTasker() {
         const user = doc.data();
         usersData.push(user);
       });
-
       // Update the state with the users data
       setUsers(usersData);
-
       // Set loading to false
       setLoading(false);
     });
-
     return () => unsubscribe();
   }, [jobDetails.jobTitle]);
 
-  console.log(users);
+  // Function to calculate the distance between two points using the Haversine formula
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const toRad = (value) => (value * Math.PI) / 180;
+    const R = 6371000; // Radius of the Earth in meters
+
+    const phi1 = toRad(lat1);
+    const phi2 = toRad(lat2);
+    const deltaPhi = toRad(lat2 - lat1);
+    const deltaLambda = toRad(lon2 - lon1);
+
+    const a =
+      Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+      Math.cos(phi1) *
+        Math.cos(phi2) *
+        Math.sin(deltaLambda / 2) *
+        Math.sin(deltaLambda / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c;
+  };
+
+  // Function to calculate the time away between two locations based on walking speed
+  const calculateTimeAway = (userLocation, jobLocation) => {
+    // Calculate the distance between the two locations using the Haversine formula
+    const distance = calculateDistance(
+      userLocation.coords.latitude,
+      userLocation.coords.longitude,
+      jobLocation.latitude,
+      jobLocation.longitude
+    );
+
+    // Assuming average walking speed of 5 km/h (you can adjust the speed according to your needs)
+    const walkingSpeed = 5; // km/h
+    const timeInHours = distance / (walkingSpeed * 1000); // Convert distance to km
+    const timeInMinutes = timeInHours * 60;
+
+    // Format the timeAwayText
+    if (timeInMinutes >= 60) {
+      const timeInHours = Math.floor(timeInMinutes / 60);
+      const remainingMinutes = Math.round(timeInMinutes % 60);
+      return `${timeInHours} hour${timeInHours > 1 ? "s" : ""} ${
+        remainingMinutes > 0
+          ? `and ${remainingMinutes} minute${remainingMinutes > 1 ? "s" : ""}`
+          : ""
+      } away`;
+    } else {
+      return `${Math.round(timeInMinutes)} minute${
+        timeInMinutes > 1 ? "s" : ""
+      } away`;
+    }
+  };
+
+  const [selectedUserId, setSelectedUserId] = useState(null);
+
+  // handle select tasker
+  const handleSelectTasker = async (taskerId, userLocation, jobLocation) => {
+    // navigate to JobCall screen
+
+    let timeAway = calculateTimeAway(userLocation, jobLocation);
+
+    navigation.navigate("Tasker Details", {
+      jobDetails,
+      taskerId,
+      timeAway,
+    });
+  };
+
+  // handle skip
+  const handleSkip = () => {
+    // allart that the job will be open to any tasker to aapply
+
+    Alert.alert(
+      "Skip",
+      "Are you sure you want to skip?,\n\nPlease note that if you don't select someone for the job, it will be open to anyone to apply",
+      [
+        {
+          text: "Cancel",
+          onPress: () => console.log("Cancel Pressed"),
+          style: "cancel",
+        },
+
+        {
+          text: "Continue",
+          onPress: () => {
+            navigation.navigate("Home Screen");
+          },
+        },
+      ],
+      { cancelable: false }
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -216,8 +206,8 @@ export default function SelectTasker() {
           />
         ) : (
           <FlatList
-            data={users}
-            keyExtractor={(item) => item.id.toString()}
+            data={users.filter((user) => user.userId !== userId)}
+            keyExtractor={(item) => item.userName}
             renderItem={({ item }) => (
               <View style={styles.taskerItem}>
                 <View style={styles.taskerDP}>{/* if no dp show icon */}</View>
@@ -246,13 +236,29 @@ export default function SelectTasker() {
                         size={15}
                         color="#02d5c9"
                       />
-                      <Text style={styles.timeAwayText}>2 hours away</Text>
+                      <Text style={styles.timeAwayText}>
+                        {" "}
+                        {calculateTimeAway(
+                          item.userLocation,
+                          jobDetails.location
+                        )}
+                      </Text>
                     </View>
                     <TouchableOpacity
                       style={styles.taskerButton}
-                      // onPress={() => navigation.navigate("JobDetails")}
+                      onPress={() =>
+                        handleSelectTasker(
+                          item.userId,
+                          item.userLocation,
+                          jobDetails.location
+                        )
+                      }
                     >
-                      <Text style={styles.taskerButtonText}>Select</Text>
+                      {selectedUserId === item.userId ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                      ) : (
+                        <Text style={styles.taskerButtonText}>Select</Text>
+                      )}
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -266,7 +272,7 @@ export default function SelectTasker() {
       <TouchableOpacity
         style={[styles.skipButton, { opacity: loading ? 0 : 1 }]}
         disabled={loading}
-        // onPress={() => navigation.navigate("JobDetails")}
+        onPress={handleSkip}
       >
         <Text style={{ color: "#fff" }}>Skip</Text>
       </TouchableOpacity>
@@ -387,10 +393,18 @@ const styles = StyleSheet.create({
     backgroundColor: "#02d5c9",
     padding: 5,
     borderRadius: 5,
+    paddingHorizontal: 10,
+    minWidth: 70,
+    alignItems: "center",
   },
 
   taskerButtonText: {
     color: "#fff",
     // fontSize: 13,
+  },
+
+  userLocation: {
+    flexDirection: "row",
+    alignItems: "center",
   },
 });

@@ -12,6 +12,7 @@ import {
   Image,
   Switch,
   SkeletonContent,
+  FlatList,
 } from "react-native";
 
 import { MaterialCommunityIcons } from "react-native-vector-icons";
@@ -72,7 +73,42 @@ export default function ForYouScreen() {
     setIsExpanded(!isExpanded);
   };
 
-  console.log("selectedCategories:", selectedCategories);
+  // get jobposts where this user is not the selected user and in a range of 30 minuits away
+  const [jobs, setJobs] = useState([]);
+
+  const userLocation = userDetails.userLocation;
+
+  // alert(JSON.stringify(userLocation));
+
+  // select all jobpost where userid is not equal to the current user id
+  useEffect(() => {
+    const getJobs = async () => {
+      try {
+        const q = query(
+          collection(db, "jobposts"),
+          where("userId", "!=", userId)
+        );
+        onSnapshot(q, (querySnapshot) => {
+          const jobsData = [];
+          querySnapshot.forEach((doc) => {
+            jobsData.push({
+              id: doc.id,
+              ...doc.data(),
+            });
+          });
+          setJobs(jobsData);
+          setIsLoadingJob(false);
+        });
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    getJobs();
+  }, [userLocation]);
+
+  // alert(JSON.stringify(jobs));
+
   return (
     <View style={styles.container}>
       <View style={styles.setAvailability}>
@@ -112,58 +148,67 @@ export default function ForYouScreen() {
             <JobItemSkeleton />
           ) : (
             <View style={styles.jobItemWrapper}>
-              <View style={styles.jobItem}>
-                <View style={styles.jobDp}>
-                  <Text>DP</Text>
-                </View>
-                <View style={styles.jobParticulars}>
-                  <Text style={styles.name}>Washingtone - (Job - Laundry)</Text>
-                  <View style={styles.detailsWrapper}>
-                    <MaterialCommunityIcons
-                      name="map-marker-outline"
-                      size={18}
-                      color="#02d5c9"
-                    />
-                    <Text style={styles.location}>Location</Text>
-                  </View>
-                  <View style={styles.detailsWrapper}>
-                    <MaterialCommunityIcons
-                      name="clock-outline"
-                      size={16}
-                      color="#02d5c9"
-                    />
-                    <Text style={styles.time}>Date time</Text>
-                  </View>
-
-                  <TouchableOpacity
-                    style={styles.acceptJobBtn}
-                    onPress={handleMoreDetails}
-                  >
-                    <Text style={styles.acceptJobBtnText}>Accept job</Text>
-                  </TouchableOpacity>
-
-                  {isExpanded && (
-                    <View style={styles.details}>
-                      <Text style={styles.detailsTitle}>Details.</Text>
-                      <Text style={styles.detailsText}>Job details...</Text>
+              <FlatList
+                data={jobs}
+                renderItem={({ item }) => (
+                  <View style={styles.jobItem}>
+                    <View style={styles.jobDp}>
+                      <Text>DP</Text>
                     </View>
-                  )}
-                  <View style={styles.JobAction}>
-                    <TouchableOpacity
-                      style={styles.moreBtn}
-                      onPress={handleMoreDetails}
-                    >
-                      <Text style={styles.moreBtnText}>
-                        {isExpanded ? "Less details..." : "More details..."}
+                    <View style={styles.jobParticulars}>
+                      <Text style={styles.name}>
+                        Washingtone - (Job - Laundry)
                       </Text>
-                    </TouchableOpacity>
+                      <View style={styles.detailsWrapper}>
+                        <MaterialCommunityIcons
+                          name="map-marker-outline"
+                          size={18}
+                          color="#02d5c9"
+                        />
+                        <Text style={styles.location}>Location</Text>
+                      </View>
+                      <View style={styles.detailsWrapper}>
+                        <MaterialCommunityIcons
+                          name="clock-outline"
+                          size={16}
+                          color="#02d5c9"
+                        />
+                        <Text style={styles.time}>Date time</Text>
+                      </View>
+
+                      <TouchableOpacity
+                        style={styles.acceptJobBtn}
+                        onPress={handleMoreDetails}
+                      >
+                        <Text style={styles.acceptJobBtnText}>Accept job</Text>
+                      </TouchableOpacity>
+
+                      {isExpanded && (
+                        <View style={styles.details}>
+                          <Text style={styles.detailsTitle}>Details.</Text>
+                          <Text style={styles.detailsText}>Job details...</Text>
+                        </View>
+                      )}
+                      <View style={styles.JobAction}>
+                        <TouchableOpacity
+                          style={styles.moreBtn}
+                          onPress={handleMoreDetails}
+                        >
+                          <Text style={styles.moreBtnText}>
+                            {isExpanded ? "Less details..." : "More details..."}
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                    <View style={styles.budget}>
+                      <Text style={styles.currency}>KES.</Text>
+                      <Text style={styles.amount}>2000</Text>
+                    </View>
                   </View>
-                </View>
-                <View style={styles.budget}>
-                  <Text style={styles.currency}>KES.</Text>
-                  <Text style={styles.amount}>2000</Text>
-                </View>
-              </View>
+                )}
+                keyExtractor={(item) => item.id}
+                showsVerticalScrollIndicator={false}
+              />
             </View>
           )}
         </View>
